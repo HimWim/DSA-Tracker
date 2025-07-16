@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 
 // Import the firestore service to create user documents on signup
@@ -21,24 +22,18 @@ import { createUserProfile } from "./firestoreService";
  */
 export const signUp = async (email, password) => {
   try {
-    // Step 1: Create the user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
     const user = userCredential.user;
-
-    // Step 2: Create the corresponding user document in Firestore
-    // This includes generating their unique anonymous name.
     await createUserProfile(user.uid, {
       email: user.email,
       uid: user.uid,
     });
-
     return userCredential;
   } catch (error) {
-    // Log the error for debugging and re-throw it to be handled by the UI
     console.error("Error during sign up: ", error.message);
     throw error;
   }
@@ -56,6 +51,16 @@ export const signIn = (email, password) => {
 };
 
 /**
+ * **NEW FUNCTION**
+ * Sends a password reset email to a given email address.
+ * @param {string} email - The email address to send the reset link to.
+ * @returns {Promise<void>} A promise that resolves when the email has been sent.
+ */
+export const sendPasswordReset = (email) => {
+  return sendPasswordResetEmail(auth, email);
+};
+
+/**
  * Signs out the currently authenticated user.
  * @returns {Promise<void>} A promise that resolves when the user has been signed out.
  */
@@ -65,9 +70,7 @@ export const logout = () => {
 
 /**
  * Subscribes to changes in the user's authentication state.
- * This is a direct wrapper around onAuthStateChanged.
  * @param {function} callback - The function to call when the auth state changes.
- * It receives the user object (or null) as an argument.
  * @returns {Unsubscribe} A function to unsubscribe from the listener.
  */
 export const onAuthChange = (callback) => {
