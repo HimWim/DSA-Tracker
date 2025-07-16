@@ -31,51 +31,39 @@ export const createUserProfile = async (userId, data) => {
   let anonymousName;
   let isUnique = false;
 
-  // Loop until a unique name is found
   while (!isUnique) {
-    // generateAnonymousName is now an async function that calls an API
     anonymousName = await generateAnonymousName();
-
     if (anonymousName) {
-      // To check for uniqueness, we'll look for a document with the name as its ID
-      // in a dedicated 'usernames' collection. This is more efficient than querying all users.
       const nameCheckRef = doc(db, "usernames", anonymousName);
       const docSnap = await getDoc(nameCheckRef);
       if (!docSnap.exists()) {
         isUnique = true;
       }
     } else {
-      // Handle case where the name generation API fails
       throw new Error("Could not generate a unique name. Please try again.");
     }
   }
 
-  // Use a batch write to perform multiple operations atomically
   const batch = writeBatch(db);
-
-  // 1. Set the main user profile document
   const userDocRef = doc(db, `/artifacts/${appId}/public/data/users`, userId);
   const userProfile = {
     ...data,
     anonymousName,
-    dsaProblemsSolved: 0, // Start with 0 problems solved
+    dsaProblemsSolved: 0,
   };
   batch.set(userDocRef, userProfile);
 
-  // 2. Create a document in the 'usernames' collection to reserve the name
   const usernameDocRef = doc(db, "usernames", anonymousName);
   batch.set(usernameDocRef, { userId: userId });
 
-  // Commit the batch write
   await batch.commit();
 };
 
 /**
- * Updates the number of DSA problems a user has solved.
- * Uses Firestore's atomic 'increment' operation to prevent race conditions.
+ * Atomically increases the number of DSA problems a user has solved.
  * @param {string} userId - The ID of the user to update.
- * @param {number} problemsToAdd - The number of new problems to add to the existing count.
- * @returns {Promise<void>} A promise that resolves when the count has been updated.
+ * @param {number} problemsToAdd - The number of new problems to add.
+ * @returns {Promise<void>}
  */
 export const updateUserProgress = (userId, problemsToAdd) => {
   const userDocRef = doc(db, `/artifacts/${appId}/public/data/users`, userId);
@@ -85,9 +73,24 @@ export const updateUserProgress = (userId, problemsToAdd) => {
 };
 
 /**
+ * **NEW FUNCTION**
+ * Atomically decreases the number of DSA problems a user has solved.
+ * @param {string} userId - The ID of the user to update.
+ * @param {number} problemsToDecrease - The number of problems to remove.
+ * @returns {Promise<void>}
+ */
+export const decreaseUserProgress = (userId, problemsToDecrease) => {
+  const userDocRef = doc(db, `/artifacts/${appId}/public/data/users`, userId);
+  // We use increment with a negative value to perform an atomic decrement.
+  return updateDoc(userDocRef, {
+    dsaProblemsSolved: increment(-problemsToDecrease),
+  });
+};
+
+/**
  * Fetches a single user's profile data from Firestore.
  * @param {string} userId - The ID of the user whose profile to fetch.
- * @returns {Promise<object|null>} A promise that resolves with the user's data, or null if not found.
+ * @returns {Promise<object|null>}
  */
 export const getUserProfile = async (userId) => {
   const userDocRef = doc(db, `/artifacts/${appId}/public/data/users`, userId);
@@ -103,9 +106,8 @@ export const getUserProfile = async (userId) => {
 
 /**
  * Sets up a real-time listener for the leaderboard.
- * It fetches all user profiles and calls the callback function with the sorted data.
  * @param {function} callback - The function to call with the leaderboard data.
- * @returns {Unsubscribe} A function to unsubscribe from the listener to prevent memory leaks.
+ * @returns {Unsubscribe}
  */
 export const onLeaderboardUpdate = (callback) => {
   const usersColRef = collection(db, `/artifacts/${appId}/public/data/users`);
@@ -118,11 +120,7 @@ export const onLeaderboardUpdate = (callback) => {
       querySnapshot.forEach((doc) => {
         usersList.push(doc.data());
       });
-
-      // Sort users by problems solved in descending order before sending to the UI
       usersList.sort((a, b) => b.dsaProblemsSolved - a.dsaProblemsSolved);
-
-      // Pass the sorted list to the callback function
       callback(usersList);
     },
     (error) => {
