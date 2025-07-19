@@ -1,13 +1,15 @@
 // src/firebase/config.js
 
-// Import the necessary functions from the Firebase SDKs
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import {
+  getFunctions,
+  httpsCallable,
+  connectFunctionsEmulator,
+} from "firebase/functions";
 
-// --- Firebase Configuration ---
-// Web app's Firebase configuration.
-
+// Your web app's Firebase configuration.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -17,19 +19,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// --- Initialize Firebase ---
-// Initialize the Firebase app with the configuration object.
-// This 'app' object is the central point of contact with your Firebase project.
+// Initialize the core Firebase app
 const app = initializeApp(firebaseConfig);
 
-// --- Initialize Services & Export ---
-// Initialize Cloud Firestore and get a reference to the service.
-// We export this 'db' instance to use it for all database operations (read, write, etc.).
-export const db = getFirestore(app);
+// --- Initialize and Export All Firebase Services ---
 
-// Initialize Firebase Authentication and get a reference to the service.
-// We export this 'auth' instance to use it for all authentication tasks (signup, login, etc.).
-export const auth = getAuth(app);
+// Initialize Auth and Firestore
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// You can also export the main 'app' object if needed elsewhere, though it's less common.
-export default app;
+// **THE FIX IS HERE:**
+// Initialize Functions and explicitly connect it to the auth instance.
+// This creates a strong link and ensures the auth state is always known.
+const functions = getFunctions(app, "us-central1");
+
+// Create the specific callable function we need.
+const deleteUserFunction = httpsCallable(functions, "deleteUser");
+
+// Export everything for the rest of the app to use
+export { db, auth, deleteUserFunction };
