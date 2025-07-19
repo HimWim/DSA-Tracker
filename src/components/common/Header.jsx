@@ -7,7 +7,6 @@ import React from 'react';
  * @param {object} props - The component props.
  * @param {object} props.userData - The data object for the currently logged-in user.
  * @param {string} props.userData.anonymousName - The user's anonymous display name.
- * @param {string} props.userData.uid - The user's unique ID.
  * @param {function} props.onLogout - The function to call when the logout button is clicked.
  */
 const Header = ({ userData, onLogout }) => {
@@ -18,10 +17,7 @@ const Header = ({ userData, onLogout }) => {
           {/* Display a welcome message, with a fallback if userData is not yet loaded */}
           Welcome, {userData?.anonymousName || 'User'}
         </h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {/* Display the user's UID for their reference */}
-          Your User ID: {userData?.uid}
-        </p>
+        {/* The User ID line has been removed from here */}
       </div>
       <button
         onClick={onLogout}

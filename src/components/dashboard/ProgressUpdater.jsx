@@ -13,6 +13,9 @@ const ProgressUpdater = ({ userId, currentProgress }) => {
   const [problemsToRemove, setProblemsToRemove] = useState('');
   const [removeState, setRemoveState] = useState({ loading: false, error: '', success: '' });
 
+  // New state for the quick action buttons
+  const [isQuickUpdating, setIsQuickUpdating] = useState(false);
+
   const handleAddProgress = async (e) => {
     e.preventDefault();
     const numToAdd = parseInt(problemsToAdd, 10);
@@ -35,7 +38,6 @@ const ProgressUpdater = ({ userId, currentProgress }) => {
     }
   };
 
-  // **NEW HANDLER** for decreasing progress
   const handleRemoveProgress = async (e) => {
     e.preventDefault();
     const numToRemove = parseInt(problemsToRemove, 10);
@@ -45,7 +47,6 @@ const ProgressUpdater = ({ userId, currentProgress }) => {
       return;
     }
 
-    // **CRITICAL CHECK:** Prevent the score from going below zero.
     if (numToRemove > currentProgress) {
         setRemoveState({ loading: false, error: `Cannot remove ${numToRemove}. You only have ${currentProgress} problems logged.`, success: '' });
         return;
@@ -64,19 +65,62 @@ const ProgressUpdater = ({ userId, currentProgress }) => {
     }
   };
 
+  // --- NEW FUNCTIONS FOR QUICK ACTIONS ---
+  const handleQuickAdd = async () => {
+    setIsQuickUpdating(true);
+    try {
+      await updateUserProgress(userId, 1);
+    } catch (err) {
+      console.error("Error with quick add:", err);
+    } finally {
+      setIsQuickUpdating(false);
+    }
+  };
+
+  const handleQuickRemove = async () => {
+    if (currentProgress <= 0) return; // Prevent going below zero
+    setIsQuickUpdating(true);
+    try {
+      await decreaseUserProgress(userId, 1);
+    } catch (err) {
+      console.error("Error with quick remove:", err);
+    } finally {
+      setIsQuickUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-gray-800 p-6 rounded-2xl shadow-lg h-full flex flex-col gap-6">
       <div>
         <h2 className="text-2xl font-bold mb-4">Your Progress</h2>
         <div className="text-center bg-gray-700 p-6 rounded-xl">
           <p className="text-lg text-gray-300">Problems Solved</p>
-          <p className="text-6xl font-bold text-indigo-400">{currentProgress ?? 0}</p>
+          {/* --- NEW QUICK ACTION BUTTONS ADDED HERE --- */}
+          <div className="flex items-center justify-center gap-4 my-2">
+            <button 
+              onClick={handleQuickRemove} 
+              disabled={isQuickUpdating || currentProgress <= 0}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold h-12 w-12 rounded-full text-2xl flex items-center justify-center transition disabled:bg-gray-500"
+              aria-label="Decrease count by one"
+            >
+              -
+            </button>
+            <p className="text-6xl font-bold text-indigo-400 min-w-[100px]">{currentProgress ?? 0}</p>
+            <button 
+              onClick={handleQuickAdd} 
+              disabled={isQuickUpdating}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 w-12 rounded-full text-2xl flex items-center justify-center transition disabled:bg-gray-500"
+              aria-label="Increase count by one"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Add Progress Form */}
       <form onSubmit={handleAddProgress}>
-        <h3 className="text-xl font-semibold mb-3">Update Your Count</h3>
+        <h3 className="text-xl font-semibold mb-3">Log Multiple Problems</h3>
         <input
           type="number"
           value={problemsToAdd}
@@ -86,7 +130,7 @@ const ProgressUpdater = ({ userId, currentProgress }) => {
           min="1"
         />
         <button type="submit" disabled={addState.loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-indigo-400">
-          {addState.loading ? 'Adding...' : 'Add to My Count'}
+          {addState.loading ? 'Logging...' : 'Log My Progress'}
         </button>
         {addState.error && <p className="text-red-400 text-sm mt-2 text-center">{addState.error}</p>}
         {addState.success && <p className="text-green-400 text-sm mt-2 text-center">{addState.success}</p>}
