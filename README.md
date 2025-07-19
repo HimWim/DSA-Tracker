@@ -40,11 +40,11 @@ Make sure you have Node.js and npm installed on your machine.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/your-repository-name.git](https://github.com/your-username/your-repository-name.git)
+    git clone https://github.com/HimWim/DSA-Tracker.git
     ```
 2.  **Navigate to the project directory:**
     ```bash
-    cd your-repository-name
+    cd DSA-Tracker
     ```
 3.  **Install NPM packages:**
     ```bash
@@ -78,14 +78,5 @@ npm run dev
 Open [http://localhost:5173](http://localhost:5173) (or the port shown in your terminal) to view it in the browser.
 
 ---
-
-## Deployment
-
-This project is configured for easy deployment on [Netlify](https://www.netlify.com/).
-
-- **Build Command:** `npm run build`
-- **Publish Directory:** `dist`
-
-The site is set up for continuous deployment. Any push to the `main` branch on GitHub will automatically trigger a new build and deploy the latest version of the application.
 
 - Live -> https://anonydsa.netlify.app/
