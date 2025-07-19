@@ -87,3 +87,5 @@ This project is configured for easy deployment on [Netlify](https://www.netlify.
 - **Publish Directory:** `dist`
 
 The site is set up for continuous deployment. Any push to the `main` branch on GitHub will automatically trigger a new build and deploy the latest version of the application.
+
+- Live -> https://anonydsa.netlify.app/
